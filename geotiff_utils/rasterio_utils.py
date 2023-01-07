@@ -35,9 +35,9 @@ def save_geotiff(array: NDArray, file_path: str, profile: UserDict) -> None:
 def create_geotiff_profile(
     width: int,
     height: int,
-    nodata: float,
     transform: Affine,
     driver: str = "Gtiff",
+    nodata: float = -9999.,
     dtype: str = "float32",
     count: int = 1,
     crs: str = "EPSG:4326",
@@ -63,3 +63,7 @@ def create_geotiff_profile(
             "compress": compress,
         }
     )
+
+
+def create_geotransform(lon_min: float, lat_max: float, resolution: float) -> Affine:
+    return Affine(resolution, 0.0, lon_min, 0.0, resolution, lat_max)
