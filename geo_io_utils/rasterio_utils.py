@@ -1,10 +1,10 @@
 from collections import UserDict
+from pathlib import Path
 from typing import Tuple
 
 import rasterio
 from affine import Affine
 from numpy.typing import NDArray
-from pathlib import Path
 
 
 def read_geotiff(file_path: str) -> NDArray:
@@ -37,7 +37,7 @@ def create_geotiff_profile(
     height: int,
     transform: Affine,
     driver: str = "Gtiff",
-    nodata: float = -9999.,
+    nodata: float = -9999.0,
     dtype: str = "float32",
     count: int = 1,
     crs: str = "EPSG:4326",
@@ -45,7 +45,7 @@ def create_geotiff_profile(
     interleave: str = "band",
     compress: str = "deflate",
 ) -> UserDict:
-    """ Create a profile dict containing the metadata describing the geographic
+    """Create a profile dict containing the metadata describing the geographic
     properties of an array.
     """
     return UserDict(
