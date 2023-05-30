@@ -5,6 +5,7 @@ from typing import Tuple
 import rasterio
 from affine import Affine
 from numpy.typing import NDArray
+from rasterio.enums import Resampling
 
 
 def read_geotiff(file_path: str) -> NDArray:
@@ -27,9 +28,30 @@ def read_geotiff_with_profile(file_path: str) -> Tuple[NDArray, UserDict]:
 
 
 def save_geotiff(array: NDArray, file_path: str, profile: UserDict) -> None:
+    """Save classic Geotiff"""
     Path(file_path).mkdir(parents=True, exist_ok=True)
     with rasterio.open(file_path, "w", **profile) as dst:
-        dst.write(array)
+        dst.write(array, 1)
+
+
+def save_cog(array: NDArray, file_path: str, profile: UserDict) -> None:
+    """Save Cloud Optimized Geotiff.
+
+    Save a classic geotiff and then build the overviews to create a COG.
+    """
+    profile.update(
+        {
+            "interleave": "pixel",
+            "tiled": True,
+            "blockxsize": 512,
+            "blockysize": 512,
+            "compress": "deflate",
+        }
+    )
+    save_geotiff(array, file_path, profile)
+    with rasterio.open(file_path, "r+") as dst:
+        dst.build_overviews([2, 4, 8, 16], Resampling.average)
+        dst.update_tags(ns="rio_overview", resampling="average")
 
 
 def create_geotiff_profile(
@@ -45,8 +67,10 @@ def create_geotiff_profile(
     interleave: str = "band",
     compress: str = "deflate",
 ) -> UserDict:
-    """Create a profile dict containing the metadata describing the geographic
-    properties of an array.
+    """Create a profile dictionary (extended metadata).
+
+    The profile contains the metadata describing the geographic properties of an array
+    and some parameters controlling the way it will be saved as a file.
     """
     return UserDict(
         {
@@ -65,5 +89,6 @@ def create_geotiff_profile(
     )
 
 
-def create_geotransform(lon_min: float, lat_max: float, resolution: float) -> Affine:
+def create_transform(lon_min: float, lat_max: float, resolution: float) -> Affine:
+    """Create transform for an Array"""
     return Affine(resolution, 0.0, lon_min, 0.0, resolution, lat_max)
